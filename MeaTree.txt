@@ -1,0 +1,42 @@
+212. Single 2D Cut
+
+Basic Parmaters
+
+_PrimaryPos: 			pos1, pos2,
+
+_SecondaryPosEnable:	True, False
+
+_SecondaryPos:		pos1, pos2,
+
+
+Default
+['_PrimaryPos','_SecondaryPosEnable','_SecondaryPos']
+
+['Pos1','True','Pos2']
+
+
+
+
+
+
+222. Single 2D Cut
+
+Basic Parmaters
+
+_PrimaryPos: 			pos1, pos2
+
+_SecondaryPosEnable:	True, False
+
+_SecondaryPos:		pos1, pos2
+
+_PolarizationSequential	True,False
+
+
+Default
+['_PrimaryPos','_SecondaryPosEnable','_SecondaryPos','_PolarizationSequential']
+
+['Pos1','True','Pos2','False']
+
+
+
+
