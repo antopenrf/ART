@@ -80,14 +80,21 @@ class CrtFrame(wx.Frame):
         self.parent.Enable(False)
         
         
-    def TextandChoice(self,label,ChoiceList):
-        text=wx.StaticText(self.panel,-1,label,size=(-1,-1),style=wx.TE_LEFT)
+    def TextandChoice(self,label,ChoiceList, sxy = (-1,-1), pxy = (-1, -1)):
+        text=wx.StaticText(self.panel, -1, label, size=sxy, pos=pxy, style=wx.TE_LEFT)
         newid=wx.NewId()
-        choice=wx.Choice(self.panel,id=newid,size=(-1,-1),choices=ChoiceList)
+        choice=wx.Choice(self.panel, id=newid, size=sxy, pos=pxy, choices=ChoiceList)
         sizer=wx.GridSizer(rows=1,cols=2,hgap=5,vgap=5)
         sizer.Add(text,0,wx.ALL,5)
         sizer.Add(choice,0,0)
         return text,choice,sizer,newid
+
+    def TextandChoice1(self,label,ChoiceList, pxy = (-1, -1), deltax = 100, deltay = 0):
+        text=wx.StaticText(self.panel, -1, label, size=(-1, -1), pos=pxy, style=wx.TE_LEFT)
+        newid=wx.NewId()
+        choice=wx.Choice(self.panel, id=newid, size=(-1, -1), pos = (pxy[0] + deltax, pxy[1] + deltay), choices=ChoiceList)
+        return text, choice, newid
+
     
     def Text(self, label, sxy = (-1, -1), pxy = (10, 10)):
         wx.StaticText(self.panel, -1, label, size = sxy, pos = pxy, style = wx.TE_LEFT)

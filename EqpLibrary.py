@@ -12,7 +12,7 @@ EqpList=[
                                            ('Rohde&Schwarz',           ('item3',                'item4'                                         )))),  
 
 
-(   '8. Rotational Positioner',           (('ETS-Lindgren',            ('2090',                                                                 )),
+(   '8. Rotational Positioner',           (('ETS',                     ('2090',                                                                 )),
                                                                                                                                                   )),  
   
 ]
@@ -21,7 +21,7 @@ EqpList=[
 EqpCategory= [ [] for x in range(len(EqpList))]
 
 EqpNumber={'E507X ENA': 111, 'N52XX PNA': 112, 'item2': 122, 'item3': 221, 'ZVL': 121, 'item6': 322, 'item4': 222, 'item5': 321, 'E4440A PSA': 212, '2090': 311, 'N9020A MXA': 211}
-EqpIDN={111: 'E507', 112: 'N52XX PNA', 211: 'N9020A MXA', 212: 'E4440A PSA', 811: '2090', 121: 'ZVL', 122: 'item2', 221: 'item3', 222: 'item4'}
+EqpIDN={111: 'E507', 112: 'N52XX PNA', 211: 'N9020A MXA', 212: 'E4440A PSA', 311: 'ETS', 121: 'ZVL', 122: 'item2', 221: 'item3', 222: 'item4'}
 def ArrangList():
     m=0
     for each1 in EqpList:
@@ -43,9 +43,11 @@ ArrangList()
 #equno: equipment number, nod:n number of devices, __GPIB: the address(given in tuple, and the length is given by nod)
 #The parameters starting with the underscore _ are for default equipment settings.
 EqpConfig={
-    'vna':{'eqpno':None,'eqpname':None,'nod':None,'_GPIB':None,'_IFB':100,'_PWR':[0,0],'_NOP':2},
-    'spe':{'eqpno':None,'eqpname':None,'nod':None,'_GPIB':None},
-    'pos':{'eqpno':None,'eqpname':None,'nod':None,'_GPIB':[None,None,None]}
+    'vna':{'eqpno':None,'eqpname':None,'nod':None,'_GPIB':None,'_COM':None,'_IP':None,'_IFB':100,'_PWR':[0,0],'_NOP':2,'_CTRL1':'GPIB'},
+    
+    'spe':{'eqpno':None,'eqpname':None,'nod':None,'_GPIB':None,'_COM':None,'_IP':None, '_CTRL1':'GPIB'},
+    
+    'pos':{'eqpno':None,'eqpname':None,'nod':None,'_GPIB':[None,None,None],'_COM':[None,None,None],'_IP':[None,None,None],'_CTRL1':'GPIB','_CTRL2':'GPIB'}
     }
 
 

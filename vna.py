@@ -47,6 +47,7 @@ class vna111(EquipVna):
         self.write(":SENS1:FREQ:STOP {f}".format(f = freq))
 
     def ask_spot_data(self):
+        self.write(":SENS1:SWE:POIN 1")
         self.write(":DISP:WIND1:TRAC1:Y:AUTO")
         self.write(":FORM:DATA ASC")
         self.write(":TRIG:SOUR BUS")

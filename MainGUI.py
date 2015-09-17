@@ -268,7 +268,8 @@ class MainFrame(wx.MDIParentFrame):
                 
     def About(self,event):  ##### Development Info.
         info()
-        
+        from EqpLibrary import *
+        print(EqpConfig)
     # create menu bar - begin #  
     def menudata(self):    
         New = ('&New','New a project.', self.OnNewProj)

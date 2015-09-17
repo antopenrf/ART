@@ -39,20 +39,32 @@ class Figure2D(wx.Panel):
             alist=[int(alist[0]*1.1),int(alist[0]*0.9)]
         self.axes.set_xlim(mininlist(alist),maxinlist(alist))        
         self.canvas.draw()
-        
-    def drawgraph(self,xdata,ydata):
-        minimum = mininlist(ydata)
+
+
+    def _set_min_max(self, data):
+        minimum = mininlist(data)
         if minimum > 0:
             minimum = minimum*0.9
         else:
             minimum = minimum*1.1
-        maximum = maxinlist(ydata)
+        maximum = maxinlist(data)
         if maximum > 0:
             maximum = maximum*1.1
         else:
             maximum = maximum*0.9
-        self.axes.set_xlim(mininlist(xdata), maxinlist(xdata))
-        self.axes.set_ylim(minimum, maximum)
+        return minimum, maximum
+    
+    def drawgraph(self, xdata, ydata):
+        x_min = mininlist(xdata)
+        x_max = maxinlist(xdata)
+
+        if x_min == x_max:
+            x_min, x_max = self._set_min_max(xdata)
+            
+        y_min, y_max = self._set_min_max(ydata)        
+
+        self.axes.set_xlim(x_min, x_max)
+        self.axes.set_ylim(y_min, y_max)
         self.trace.set_xdata(xdata)
         self.trace.set_ydata(ydata)
         self.canvas.draw()

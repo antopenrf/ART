@@ -18,9 +18,12 @@ from CrtWidget import *
 import Queue
 queuelist=Queue.Queue
 import time
+import TestCore
+core111 = TestCore.core111
 import TestDB 
 from math import pi
 from math import sin
+from socket import error as socket_error
 #---------------------------------coding
         
 rm_in_Test = visa.ResourceManager()
@@ -113,7 +116,7 @@ class test(object):
         time.sleep(1)
 
 
-    def CheckGPIB(self,token):####Check 2, overriden in level1.      
+    def CheckGPIB(self,token):####Check 2, coded herein in top level.
         self.Dialog.Updating('Equipment assignment is validated.\nStarting to verify GPIB address assignment...')
         time.sleep(1)       
         def extract(item):
@@ -125,72 +128,123 @@ class test(object):
                     extract(x)
                     
         #Get currently assigned GPIB address from self.eqplist.
-
+        templist = []
         for each1 in self.para['eqp']:
-            templist=self.eqplist[each1]['_GPIB']
-            extract(templist)
-
-        ## Get the currently connected instruments from pyvisa.
-        connected=[]
-        token.acquire()#Token ------- Acquire the lock token to encapsulate the routine that invloves accessing with GPIB interface.
-        visaconnected = rm_in_Test.list_resources()  ### previously: visa.get_instruments_list()
-        visaconnected = [ str(each) for each in visaconnected ]  ## Convert from unicode to string for Python2.x
-        token.release()#Token ------- Release the lock token to encapsulate the routine that invloves accessing with GPIB interface.
-        for each in visaconnected:
-            if each[:4]=='GPIB':
-                connected.append(int(each[7:-7]))
-        ## Check if the assigned GPIB addresses are all in the currently-connected list.
-        nonconnected=[]
-        nonconnectedstring=''
-        for each1 in self.gpiblist:
-            flag=0
-            for each2 in connected:
-                if each1==each2:
-                    flag=1
-            if not flag:
-                nonconnected.append(each1)
-                nonconnectedstring+=('('+str(each1)+') ')
-        if nonconnected == []:
+            the_eqp = self.eqplist[each1]
+            if the_eqp['_CTRL1'] == 'GPIB':
+                templist=the_eqp['_GPIB']
+                extract(templist)
+                
+        if templist == []:
             self.flag_GPIB=1
-        else:
-            self.flag_GPIB=0
+            thread.start_new_thread(self.CheckInstrument,(self.meaframe.GPIB_token,))
 
-        #Check if there is duplicated GPIB address.
-        if duplicateditem(self.gpiblist) != []:
-            self.Dialog.Uncompleted("There are duplicated GPIB address assignments.\nPlease check the configuration again.")
         else:
-            if not self.flag_GPIB:
-                self.Dialog.Uncompleted("GPIB address of " + nonconnectedstring + "are not found activated.\nPlease check  configuration or GPIB cable connection.")
+            ## Get the currently connected instruments from pyvisa.
+            connected=[]
+            token.acquire()#Token ------- Acquire the lock token to encapsulate the routine that invloves accessing with GPIB interface.
+            visaconnected = rm_in_Test.list_resources()  ### previously: visa.get_instruments_list()
+            visaconnected = [ str(each) for each in visaconnected ]  ## Convert from unicode to string for Python2.x
+            token.release()#Token ------- Release the lock token to encapsulate the routine that invloves accessing with GPIB interface.
+            for each in visaconnected:
+                if each[:4]=='GPIB':
+                    connected.append(int(each[7:-7]))
+                    ## Check if the assigned GPIB addresses are all in the currently-connected list.
+            nonconnected=[]
+            nonconnectedstring=''
+            for each1 in self.gpiblist:
+                flag=0
+                for each2 in connected:
+                    if each1==each2:
+                        flag=1
+                if not flag:
+                    nonconnected.append(each1)
+                    nonconnectedstring+=('('+str(each1)+') ')
+            if nonconnected == []:
+                self.flag_GPIB=1
+            else:
+                self.flag_GPIB=0
 
-        if self.flag_GPIB:
-            #The method within test class level top.  Start generationg the equipment list that stores all the equipment pieces which will be used during the testing.  Equipments identity (*IDN?) will be checked here.
-            thread.start_new_thread(self.CheckInstrument,(self.meaframe.GPIB_token,))        
+            #Check if there is duplicated GPIB address.
+            if duplicateditem(self.gpiblist) != []:
+                self.Dialog.Uncompleted("There are duplicated GPIB address assignments.\nPlease check the configuration again.")
+            else:
+                if not self.flag_GPIB:
+                    self.Dialog.Uncompleted("GPIB address of " + nonconnectedstring + "are not found activated.\nPlease check  configuration or GPIB cable connection.")
+
+            if self.flag_GPIB:
+                #The method within test class level top.  Start generationg the equipment list that stores all the equipment pieces which will be used during the testing.  Equipments identity (*IDN?) will be checked here.
+                thread.start_new_thread(self.CheckInstrument,(self.meaframe.GPIB_token,))        
 
     def CheckInstrument(self,token):####Check 3, coded herein in top level.
-        self.Dialog.Updating('GPIB address assignment is validated.\nStarting to verify equipment identification...')
+        self.Dialog.Updating('Communication address assignment is validated.\nStarting to verify equipment identification...')
         time.sleep(1)
-        
+
         if self.flag_GPIB and self.flag_Assignment:          
             self.flag_Instrument=1
-            for each in self.para['eqp']:#['pos']: #'vna' not included at this moment
-                n=1
-                for gpib in makelist(self.eqplist[each]['_GPIB']):#the number of available '_GPIB' address determined the number of this for-loop
-                    if gpib!=None:
-                        #Token ------- Acquire the lock token to encapsulate the routine that invloves accessing with GPIB interface.
+
+            ## There are two loops: 1st is for different equipment types, such as vna, pos.
+            ## The 2nd loop is for the number of the same device. Looping through nod.
+            for each_eqp in self.para['eqp']:    ### loop 1
+                ##### --- Prepare equipment comm address list. --- #####
+                the_eqp = self.eqplist[each_eqp]  ## eqplist is meadb.iEqpPara.
+                nod = the_eqp['nod']
+                gpib_list = self.eqplist[each_eqp]['_GPIB']
+                if type(gpib_list) != list:
+                    gpib_list = [gpib_list, ]
+                com_list = self.eqplist[each_eqp]['_COM']
+                if type(com_list) != list:
+                    com_list = [com_list, ]
+                ip_list = self.eqplist[each_eqp]['_IP']
+                if type(ip_list) != list:
+                    ip_list = [ip_list, ]
+                comm_list = []
+                if nod == None:
+                    nod = 1
+                for each in range(nod):
+                    ctrl = '_CTRL' + str(each + 1)
+                    if the_eqp[ctrl] == 'GPIB':
+                        comm_list.append(str(gpib_list[each]))
+                    elif the_eqp[ctrl] == 'COM':
+                        comm_list.append('com'+str(com_list[each]))
+                    else:
+                        comm_list.append("\"ip " + str(ip_list[each]) + "\"")
+                if nod == 1:
+                    comm_list = comm_list[0]
+                            
+                for n, each_comm in enumerate(makelist(comm_list)):          ### loop 2
+                    ## The number of available '_GPIB' address determined the number of this for-loop
+                    n = n + 1
+                    if each_comm != None:
+                        ### Token ------- Acquire the lock token to encapsulate the routine that invloves accessing with GPIB interface.
                         token.acquire()
-                        evalstring=each+str(self.eqplist[each]['eqpno'])+'('+str(gpib)+')'
-                        temp=eval(evalstring)
-                        tempIDN=temp.ask("*IDN?").find(EqpIDN[self.eqplist[each]['eqpno']])
-                        temp.close()
-                        token.release()
-                        #Token ------- Release the lock token to encapsulate the routine that invloves accessing with GPIB interface.
-                        if tempIDN==-1:
-                            self.Dialog.Uncompleted("Equipment [%s] with GPIB addressed at [%d] is not identified.\nPlease check equipment configuration." %(self.eqplist[each]['eqpname'],gpib))
-                            self.flag_Instrument=0
+                        
+                        #*** -- This is where we initiate instrument from EquipCommon.
+                        evalstring = each_eqp + str(self.eqplist[each_eqp]['eqpno'])+'(' + each_comm + ')'
+                        if evalstring.find('ip'):
+                            try:
+                                temp = eval(evalstring)
+                            except socket_error:
+                                self.Dialog.Uncompleted("Equipment [%s] addressed at [%s] \nis not communicating.\nPlease check equipment configuration." %(self.eqplist[each_eqp]['eqpname'], each_comm[3:]))
+                                self.flag_Instrument = 0
+                                token.release()
                         else:
-                            self.equipment[each+str(n)]=evalstring#This is the evaluation string we use to generate the pyvisa instance for GPIB interface.
-                        n+=1
-        #The method within test class level 3.  Check if all necessary parameters are given.
+                            temp=eval(evalstring)
+                        #*** ---------------------------------------------------------
+
+                        if self.flag_Instrument:
+                            tempIDN = temp.ask("*IDN?").find(EqpIDN[self.eqplist[each_eqp]['eqpno']])
+                            temp.close()
+                            token.release()
+                        ### Token ------- Release the lock token to encapsulate the routine that invloves accessing with GPIB interface.
+                            if tempIDN==-1:
+                                self.Dialog.Uncompleted("Equipment [%s] addressed at [%s] is not identified.\nPlease check equipment configuration." %(self.eqplist[each_eqp]['eqpname'],each_comm))
+                                self.flag_Instrument=0
+                            else:
+                                self.equipment[each_eqp+str(n)]=evalstring
+                            ##This is the evaluation string we use to generate the pyvisa instance for GPIB interface.
+
+        ##The following method is under test class level 3.  Check if all necessary parameters are given.
         if self.flag_Instrument:
             self.CheckParameter()
         
@@ -224,7 +278,12 @@ class test(object):
         testdb.filename=time.strftime("%Y.%m.%d_%Hh_%Mm%S",temptime) + underscore + testdb.testname
         testdb.stoptime=time.strftime("%H:%M:%S   %m/%d/%Y",temptime)
         testdb.totaltime=time.time()-testdb.totaltime
-        totaltimestring=str(testdb.totaltime.__int__()/86400)+'d '+str(testdb.totaltime.__int__()/3600)+'h '+str(testdb.totaltime.__int__()/60)+'m '+str(testdb.totaltime.__int__())+'s'
+        ttl = testdb.totaltime
+        days = int(ttl.__int__()/86400)
+        hours = int((ttl.__int__() - 86400*days)/3600)
+        minutes = int((ttl.__int__() - 86400*days - 3600*hours)/60)
+        seconds = int((ttl.__int__() - 86400*days - 3600*hours - 60*minutes))
+        totaltimestring=str(days) + 'd '+str(hours) +'h '+ str(minutes) +'m '+ str(seconds)+'s'
         self.meaframe.parent.testlist.SetStringItem(0,5,testdb.stoptime)
         self.meaframe.parent.testlist.SetStringItem(0,6,totaltimestring)       
         if not self.meaframe.parent.queue_flag_greenOn:
@@ -233,7 +292,7 @@ class test(object):
             pass        
         TestDB.TestDBremove()
         TestDB.CheckQueue()
-
+        self.meadb.meaframe.panelW.Enable()
 
     def Apply_Correction(self, meadb, xdata, ydata):
         loaded_path = meadb.iPara[str(meadb.meaID)]["_Correction"]
@@ -278,18 +337,18 @@ class test2(test):
             self.Dialog.Uncompleted("No VNA is assigned.")
             self.flag_Assignment=0
         if self.eqplist['pos']['eqpno']==None:
-            self.Dialog.Uncompleted("No GPIB address is assigned to the rotational positioner.\nPlease check the parameters.")
+            self.Dialog.Uncompleted("No Positioner is assigned.")
             self.flag_Assignment=0
-        if self.eqplist['vna']['_GPIB']==None:
-            self.Dialog.Uncompleted("No GPIB address is assigned to VNA.\nPlease check the parameters.")
+        if self.eqplist['vna']['_GPIB']==None and self.eqplist['vna']['_COM']==None and self.eqplist['vna']['_IP']==None:
+            self.Dialog.Uncompleted("No address is assigned to VNA.\nPlease check the parameters.")
             self.flag_Assignment=0
-        if self.eqplist['pos']['_GPIB'][0]==None:
-            self.Dialog.Uncompleted("No GPIB address is assigned to the primary positioner.\nPlease check the parameters.")
+        if self.eqplist['pos']['_GPIB'][0]==None and self.eqplist['pos']['_COM'][0]==None and self.eqplist['pos']['_IP'][0]==None:
+            self.Dialog.Uncompleted("No address is assigned to the primary positioner.\nPlease check the parameters.")
             self.flag_Assignment=0
-        if self.para['value'][1]=='Yes':
-            if self.eqplist['pos']['_GPIB'][1]==None:
-                self.Dialog.Uncompleted("No positioner GPIB address is assigned to the secondary positioner..\nPlease check the parameters.")
-                self.flag_Assignment=0
+#        if self.para['value'][1]=='Yes':
+#            if self.eqplist['pos']['_GPIB'][1]==None:
+#                self.Dialog.Uncompleted("No positioner GPIB address is assigned to the secondary positioner..\nPlease check the parameters.")
+#                self.flag_Assignment=0
         if self.flag_Assignment:
             ## The method within test class level 1.  Check if the assigned GPIB address are communicating.  
             thread.start_new_thread(self.CheckGPIB,(self.meaframe.GPIB_token,))
@@ -343,24 +402,24 @@ class test212(test21):
     def TestLoop(self,pos1,pos2,testdb):
         ### Begining of the test loop.
         self.TestLoop_Start(testdb)
-        
+
+        self.meadb.meaframe.panelW.Disable()
         ### Testing-specific loop
         pos1step=self.para['_PrimaryStep']
         pos2fixed=self.para['_SecondaryFixed']
         self.Cmd_Sk_DualPos(pos1,pos2,(0,pos2fixed))
 
-        x=4
         for n in range(x):
-            self.Cmd_Sk_DualPos(pos1,pos2,(0,360/x*n))
-            anglelist=range(360/x,360/x*(n+2),360/x)
-            time.sleep(0.1)
-            self.meaframe.plotter.drawgraph(map(lambda y:y/180.0*pi,anglelist), map(lambda y:sin(y/180.0*pi)*sin(y/180.0*pi),anglelist))        
+            self.Cmd_Sk_DualPos(pos1, pos2, (0,360/x*n))
+            
+            ## - TestCore.core111 test routine - ###
+            testdb.rawdata['x'], testdb.rawdata['y'] = core111(self.vna, self.freq, mode = 'plotter', plotter = self.meaframe.plotter)
 
         
         self.meadb.flag_in_Testing=0
-
-        pos1.close()
-        pos2.close()
+        self.vna.close()
+        self.pos1.close()
+        self.pos2.close()
 
         ### End of the test loop.        
         self.TestLoop_Stop(testdb)
@@ -379,7 +438,7 @@ class test212(test21):
         else:
             self.flag_2ndpos=False
 
-        self.vna=self.equipment['vna1']    
+        self.vna=eval(self.equipment['vna1'])
         self.pos1=eval(testdb.equipment['pos1'])
         self.pos1.setname=self.para['value'][0]
         if self.flag_2ndpos:
@@ -406,12 +465,13 @@ class test1(test):
 
     def CheckAssignment(self):
         test.CheckAssignment(self)
-        if self.eqplist['vna']['eqpno']==None:
+        the_eqp = self.eqplist['vna']
+        if the_eqp['eqpno']==None:
             self.Dialog.Uncompleted("No VNA is assigned.")
             self.flag_Assignment=0
 
-        if self.eqplist['vna']['_GPIB']==None:
-            self.Dialog.Uncompleted("No GPIB address is assigned to VNA.\nPlease check the parameters.")
+        if the_eqp['_GPIB']==None and the_eqp['_COM']==None and the_eqp['_IP']==None:
+            self.Dialog.Uncompleted("No communication address is assigned to VNA.\nPlease check the parameters.")
             self.flag_Assignment=0
 
         if self.flag_Assignment:
@@ -424,15 +484,7 @@ class test11(test1):
         pass
         ##        test2.__init__(self,meadb)
 
-    def Cmd_Sweep(self, device, freqs):
-        pass
-    
-    def Cmd_Spot(self, device, freq):
-        device.wrt_single_freq(freq)
-        spot_datum = device.ask_spot_data()
-        while not device.ifopc():
-            pass
-        return spot_datum
+
         
 class test111(test11):
 
@@ -450,42 +502,34 @@ class test111(test11):
             self.OnSetAfterFourChecks()
 
     def TestLoop(self, testdb):
-        ### Begining of the test loop.
+        ### --- Begining of the test loop.
         self.TestLoop_Start(testdb)
         
-        ### Testing-specific loop
+        ### -- Testing-specific settings -- ###
         sij = self.para['value'][0]
         pin = self.eqplist['vna']['_PWR'][0]
         ifb = self.eqplist['vna']['_IFB']
         
         self.vna.initialization()
-        while not self.vna.ifopc():        
-            pass
+        self.vna.wait_opc()
 
         self.vna.set_pnt(1)
         self.vna.set_sij(sij)
         self.vna.set_pwr(pin)
         self.vna.set_ifb(ifb)
 
-        x_axis_freq = []
-        y_axis_sij = []
-        for each_f in self.freq:
-            x_axis_freq.append(each_f)
-            each_f = each_f*1.0e6
-            while not self.vna.ifopc():
-                pass
-            spot_datum = self.Cmd_Spot(self.vna, each_f)
-            y_axis_sij.append(spot_datum)
-            self.meaframe.plotter.drawgraph(x_axis_freq, y_axis_sij)
+        self.meadb.meaframe.panelW.Disable()
+        ## - TestCore.core111 test routine - ###
+        testdb.rawdata['x'], testdb.rawdata['y'] = core111(self.vna, self.freq, mode = 'plotter', plotter = self.meaframe.plotter)
 
-        testdb.rawdata['x'] = x_axis_freq
-        testdb.rawdata['y'] = y_axis_sij
 
-        self.Apply_Correction(self.meadb, x_axis_freq, y_axis_sij)
+        self.Apply_Correction(self.meadb, testdb.rawdata['x'], testdb.rawdata['y'])
         
         self.meadb.flag_in_Testing=0
         self.vna.close()
-        ### End of the test loop.        
+
+        ### --- End of the test loop.
+        
         self.TestLoop_Stop(testdb)
 
 

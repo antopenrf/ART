@@ -348,8 +348,8 @@ class MeaPanel(wx.MDIChildFrame):
  
     def AdvTextChoice(self, telf, label, pxy, ChoiceList):
         text = wx.StaticText(telf, -1, label, pos=pxy, style=wx.TE_LEFT)
-        font = wx.Font(gfontsize, gfont_para, wx.NORMAL, wx.NORMAL)
-        text.SetFont(font)
+#        font = wx.Font(gfontsize, gfont_para, wx.NORMAL, wx.NORMAL)
+#        text.SetFont(font)
         newid = wx.NewId()
         choice = wx.Choice(telf, id=newid, pos=(pxy[0]+170, pxy[1]-5), choices=ChoiceList)
         return text, choice, newid

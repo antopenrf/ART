@@ -36,13 +36,14 @@ def TestDBremove(para=1):
     completed_testdb.treeID = meadb.meaframe.projtree.AddDataItem(name)  ## Here is to add onto the tree.
     meadb.meaframe.projtree.SetItemTextColour(completed_testdb.treeID, c_lightblue2)
     meadb.treeID = completed_testdb.treeID
-    
+
+    mainframe_mgr = completed_testdb.meadb.meaframe.parent._mgr
     if queue_flag_lock:
-        completed_testdb.meadb.meaframe.parent._mgr.GetPane(testlist).Caption('Test Queue (Locked)'+' - '+str(TestItemNo)+' untested items')
-        completed_testdb.meadb.meaframe.parent._mgr.Update()
+        mainframe_mgr.GetPane(testlist).Caption('Test Queue (Locked)'+' - '+str(TestItemNo)+' untested items')
+        mainframe_mgr.Update()
     else:
-        completed_testdb.meadb.meaframe.parent._mgr.GetPane(testlist).Caption('Test Queue (Unlocked)'+' - '+str(TestItemNo)+' untested items')
-        completed_testdb.meadb.meaframe.parent._mgr.Update()
+        mainframe_mgr.GetPane(testlist).Caption('Test Queue (Unlocked)'+' - '+str(TestItemNo)+' untested items')
+        mainframe_mgr.Update()
     ## Referesh the list after testing.    
     for each in range(len(TestQueue)):
         TestQueue[each]=TestQueue.pop(each+1)

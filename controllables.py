@@ -1,27 +1,58 @@
 ## controllables.py, starting date: July 24, 2012, written by yulung tang
 ## This is a module designed to be called by T&M GUI software.
 ## 'pyvisa' module is imported here and used as the superclass.
+## Sep 9, 2015: extending GPIB controml to COM via pyvisa, and LNA via socket.
 
 import visa
+from socket import socket, AF_INET, SOCK_STREAM
 
-class EquipGpib():
-#class EquipGpib(visa.GpibInstrument):
+class EquipCommon():
+## class EquipGpib(visa.GpibInstrument): --- pyvisa 1.4 syntax
     """the very top level of GPIB controllables"""
-    def __init__(self,address):
+    def __init__(self, address):
         #visa.GpibInstrument.__init__(self,"GPIB::%d" % address)
         self.rm=visa.ResourceManager()
         self.flagOPC=1
-        self.device = self.rm.get_instrument("GPIB::%d" % address)
+        self.connection_type = None
+        
+        if type(address) == int:
+            self.connection_type = 'gpib'
+            self.device = self.rm.get_instrument("GPIB::%d" % address)
+            
+        elif address[:3].lower() == 'com':
+            ## Then entered address should be in the format as 'com1', 'com2' ..
+            self.connection_type = 'com'
+            self.device = self.rm.get_instrument(address)
+            
+        elif address[:2].lower() == 'ip':
+            ## Then entered 'address' should be in the format as "ip xxx.xxx.xxx.xxx port".
+            self.connection_type = 'ip'
+            ip_address = address.split(" ")
+            ip = ip_address [1]
+            port = int(ip_address[2])
+            self.device = socket(AF_INET, SOCK_STREAM)
+            self.device.connect((ip, port))
+            
 
     def write(self, to_be_written):
-        return self.device.write(to_be_written)
-
+        if self.connection_type in ['gpib', 'com']:
+            return self.device.write(to_be_written)
+        else: ## ip connection
+            return self.device.send(to_be_written + '\n')
+        
     def ask(self, to_be_asked):
-        return self.device.ask(to_be_asked)
-
+        if self.connection_type in ['gpib', 'com']:
+            return self.device.ask(to_be_asked)
+        else: ## ip connection
+            self.device.send(to_be_asked + '\n')
+            return self.device.recv(4096)
+        
     def read(self):
-        return self.device.read()
-    
+        if self.connection_type in ['gpib', 'com']:
+            return self.device.read()
+        else: ## ip connection
+            return self.device.recv(4096)
+        
     def close(self):
         return self.device.close()
     
@@ -30,7 +61,11 @@ class EquipGpib():
     
     def setname(self,name):
         self.name=str(name)
-                  
+
+    def wait_opc(self):
+        while not self.ifopc():
+            pass
+
     
 # important concept:  The technique of extension is used here to
 # seperate the common equipment functionality from specifics of equipment commands.
@@ -46,7 +81,7 @@ class EquipGpib():
 # vnas.py
 
         
-class EquipPosi(EquipGpib):
+class EquipPosi(EquipCommon):
     
     """equipment-general class: Positioner """
     def initialization(self):
@@ -79,7 +114,7 @@ class EquipPosi(EquipGpib):
     def stop(self):
         self.wrtstop()
 
-class EquipVna(EquipGpib):
+class EquipVna(EquipCommon):
     
     """equipment-general class: Positioner """
     def initialization(self):

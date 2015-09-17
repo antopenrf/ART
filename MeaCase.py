@@ -112,18 +112,21 @@ class CrtMea212(CrtMea000):
 
     def Adv_EqpSetup(self,telf):     
         eqt1,telf.eqc1,eqid1=self.AdvTextChoice(telf,'-VNA-',(220,340),EqpCategory[0])
-        eqt10,telf.eqc10,eqid10=self.AdvTextChoice(telf,'VNA GPIB:',(220,340+30),AddressList)
+        telf.text_address_vna = wx.StaticText(telf, -1, 'VNA Address:     ', pos=(220, 340+30), style=wx.TE_LEFT)
+#        eqt10, telf.eqc10, eqid10=self.AdvTextChoice(telf,'Address:  ',(220,340+30),AddressList)
         t4,telf.mc4,id4=self.AdvTextChoice(telf,'VNA IF Bandwidth (Hz):',(220,340+30*2),IFBList)
         t5,telf.mc5,id5=self.AdvTextChoice(telf,'VNA Input Power (dBm):',(220,340+30*3),PWRList)
 
         eqt2,telf.eqc2,eqid2=self.AdvTextChoice(telf,'-Rotational Positioner-',(220,340+30*5),EqpCategory[2])
-        eqt20,telf.eqc20,eqid20=self.AdvTextChoice(telf,'1st Positioner GPIB:',(220,340+30*6),AddressList)
-        eqt21,telf.eqc21,eqid21=self.AdvTextChoice(telf,'2nd Positioner GPIB:',(220,340+30*7),AddressList)
+        telf.text_address_pos1 = wx.StaticText(telf, -1, '1st Positioner Address:     ', pos=(220, 340+30*6), style=wx.TE_LEFT)
+        telf.text_address_pos2 = wx.StaticText(telf, -1, '2nd Positioner Address:     ', pos=(220, 340+30*7), style=wx.TE_LEFT)
+#        eqt20,telf.eqc20,eqid20=self.AdvTextChoice(telf,'1st Positioner GPIB:',(220,340+30*6),AddressList)
+#        eqt21,telf.eqc21,eqid21=self.AdvTextChoice(telf,'2nd Positioner GPIB:',(220,340+30*7),AddressList)
 
         self.AdvEqpIdList=[]        
-        for each in [id4,id5,eqid1,eqid2,eqid10,eqid20,eqid21]:
+        for each in [id4, id5, eqid1, eqid2]:
             self.AdvEqpIdList.append(each)
-        for each in [telf.mc4,telf.mc5,telf.eqc1,telf.eqc2,telf.eqc10,telf.eqc20,telf.eqc21]:
+        for each in [telf.mc4, telf.mc5, telf.eqc1, telf.eqc2]:
             self.Bind(wx.EVT_CHOICE,self.OnEqpChoice,each)        
 
         self.Update_EqpSetup(telf, self.meadb.meaID, self.meadb.iPara, self.meadb.iEqpPara)
@@ -135,7 +138,10 @@ class CrtMea212(CrtMea000):
         
         try:
             telf.eqc1.SetStringSelection(revdict(EqpNumber)[iEqpPara['vna']['eqpno']])
-            telf.eqc10.SetStringSelection(str(iEqpPara['vna']['_GPIB']))
+            telf.eqc1.Disable()
+            telf.text_address_vna.SetLabel('VNA Address:       ' + iEqpPara['vna']['_'+iEqpPara['vna']['_CTRL1']])
+#            telf.eqc10.SetStringSelection(str(iEqpPara['vna']['_'+iEqpPara['vna']['_CTRL1']]))
+#            telf.eqc10.Disable()
             telf.mc4.SetStringSelection(str(iEqpPara['vna']['_IFB']))
             telf.mc5.SetStringSelection(str(iEqpPara['vna']['_PWR'][0]))
         except KeyError:
@@ -143,8 +149,11 @@ class CrtMea212(CrtMea000):
 
         try:        
             telf.eqc2.SetStringSelection(revdict(EqpNumber)[iEqpPara['pos']['eqpno']])
-            telf.eqc20.SetStringSelection(str(iEqpPara['pos']['_GPIB'][0]))
-            telf.eqc21.SetStringSelection(str(iEqpPara['pos']['_GPIB'][1]))
+            telf.eqc2.Disable()
+            telf.text_address_pos1.SetLabel('1st Positioner Address:       ' + iEqpPara['pos']['_'+iEqpPara['pos']['_CTRL1']][0])
+            telf.text_address_pos2.SetLabel('2nd Positioner Address:      ' + iEqpPara['pos']['_'+iEqpPara['pos']['_CTRL2']][1])  ## needs to revisit
+            #            telf.eqc20.SetStringSelection(str(iEqpPara['pos']['_GPIB'][0]))
+#            telf.eqc21.SetStringSelection(str(iEqpPara['pos']['_GPIB'][1]))
         except KeyError:
             pass
         
@@ -249,15 +258,15 @@ class CrtMea111(CrtMea000):
         
 
     def Adv_EqpSetup(self,telf):      
-        eqt1,telf.eqc1,eqid1=self.AdvTextChoice(telf,'-VNA-',(220,340),EqpCategory[0])
-        eqt10,telf.eqc10,eqid10=self.AdvTextChoice(telf,'VNA GPIB:',(220,340+30),AddressList)
+        eqt1, telf.eqc1, eqid1 = self.AdvTextChoice(telf,'-VNA-',(220,340),EqpCategory[0])
+        telf.text_address = wx.StaticText(telf, -1, 'VNA Address:     ', pos=(220, 340+30), style=wx.TE_LEFT)
         t4,telf.mc4,id4=self.AdvTextChoice(telf,'VNA IF Bandwidth (Hz):',(220,340+30*2),IFBList)
         t5,telf.mc5,id5=self.AdvTextChoice(telf,'VNA Input Power (dBm):',(220,340+30*3),PWRList)
 
         self.AdvEqpIdList=[]        
-        for each in [id4,id5,eqid1,eqid10]:
+        for each in [id4, id5, eqid1]:
             self.AdvEqpIdList.append(each)
-        for each in [telf.mc4,telf.mc5,telf.eqc1,telf.eqc10]:
+        for each in [telf.mc4, telf.mc5, telf.eqc1]:
             self.Bind(wx.EVT_CHOICE, self.OnEqpChoice,each)        
 
         self.Update_EqpSetup(telf, self.meadb.meaID, self.meadb.iPara, self.meadb.iEqpPara)
@@ -266,7 +275,8 @@ class CrtMea111(CrtMea000):
     def Update_EqpSetup(self, telf, meaID, iPara, iEqpPara):
         try:            
             telf.eqc1.SetStringSelection(revdict(EqpNumber)[iEqpPara['vna']['eqpno']])
-            telf.eqc10.SetStringSelection(str(iEqpPara['vna']['_GPIB']))
+            telf.eqc1.Disable()
+            telf.text_address.SetLabel('VNA Address:       ' + iEqpPara['vna']['_'+iEqpPara['vna']['_CTRL1']])
             telf.mc4.SetStringSelection(str(iEqpPara['vna']['_IFB']))
             telf.mc5.SetStringSelection(str(iEqpPara['vna']['_PWR'][0]))
         except KeyError:
@@ -286,11 +296,11 @@ class CrtMea111(CrtMea000):
         selectedChoice=self.panelW.FindWindowById(selectedID).GetStringSelection()
         for each in self.AdvEqpIdList:
             if each == selectedID:
-                if self.panelW.FindWindowById(selectedID)==self.panelW.eqc1:
-                    self.meadb.iEqpPara['vna']['eqpno']=EqpNumber[self.panelW.FindWindowById(selectedID).GetStringSelection()]
-                    self.meadb.iEqpPara['vna']['eqpname']=revdict(EqpNumber)[self.meadb.iEqpPara['vna']['eqpno']]                                          
-                if self.panelW.FindWindowById(selectedID)==self.panelW.eqc10:
-                    self.meadb.iEqpPara['vna']['_GPIB']=int(self.panelW.FindWindowById(selectedID).GetStringSelection())
+#                if self.panelW.FindWindowById(selectedID)==self.panelW.eqc1:
+#                    self.meadb.iEqpPara['vna']['eqpno']=EqpNumber[self.panelW.FindWindowById(selectedID).GetStringSelection()]
+#                    self.meadb.iEqpPara['vna']['eqpname']=revdict(EqpNumber)[self.meadb.iEqpPara['vna']['eqpno']]                                          
+#                if self.panelW.FindWindowById(selectedID)==self.panelW.eqc10:
+#                    self.meadb.iEqpPara['vna']['_GPIB']=int(self.panelW.FindWindowById(selectedID).GetStringSelection())
                 if self.panelW.FindWindowById(selectedID)==self.panelW.mc4:                    
                     self.meadb.iEqpPara['vna']['_IFB']=self.panelW.FindWindowById(selectedID).GetStringSelection()
                 if self.panelW.FindWindowById(selectedID)==self.panelW.mc5:                    
