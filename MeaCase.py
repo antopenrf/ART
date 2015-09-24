@@ -209,7 +209,9 @@ class CrtMea212(CrtMea000):
 
 ### Mea 111 - frequency sweep over VNA
 class CrtMea111(CrtMea000):
-    count=0
+    count = 0
+    Sij_list = ['S21', 'S11', 'S12', 'S22']
+#    Sij_list = ['S21', 'S11', 'S12', 'S22', 'S11 S21', 'S22 S12', 'S11 S22 S21 S12']
     def __init__(self, parent, meatype, meaID, name, meadb = None, mode = 'new'):  #This parent is the MainGUI frame.
         CrtMea111.count+=1
         self.mode = mode
@@ -247,7 +249,7 @@ class CrtMea111(CrtMea000):
 
 
     def Adv_MeaSetup(self,telf):
-        t1, telf.mc1, id1 = self.AdvTextChoice(telf, 'S Parameter:',(220,40),['S21','S11', 'S12', 'S22'])
+        t1, telf.mc1, id1 = self.AdvTextChoice(telf, 'S Parameter:',(220,40),CrtMea111.Sij_list)
         telf.browser1=self.CrtCorrectionBrowser1(telf, 'Select the Correction File', (220,70))
         self.Bind(wx.EVT_CHOICE, self.OnMeaChoice, telf.mc1)
         self.Bind(wx.EVT_TEXT, self.OnBrowser1, telf.browser1)

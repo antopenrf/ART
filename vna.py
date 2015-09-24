@@ -31,7 +31,10 @@ class vna111(EquipVna):
         return int(self.ask("*OPC?"))
 
     def wrt_sij(self, sij):
-        self.write(":CALC1:PAR1:DEF {s}".format(s = sij))
+        notraces = len(sij)
+        self.write(":CALC1:PAR:COUN {n}".format(n = notraces))
+        for k, each in enumerate(sij):
+            self.write(":CALC1:PAR{p}:DEF {s}".format(p = k+1, s = each))
 
     def wrt_pwr(self, pwr):
         self.write(":SOUR1:POW {p}".format(p = pwr))
@@ -46,6 +49,12 @@ class vna111(EquipVna):
         self.write(":SENS1:FREQ:STAR {f}".format(f = freq))
         self.write(":SENS1:FREQ:STOP {f}".format(f = freq))
 
+    def ask_notraces(self, calc = 1):
+        return self.ask("CALC{n}.PAR.COUN ?".format(n = calc))
+
+    def ask_trace_def(self, trace =1, calc=1):
+        return self.ask("CALC{n}.PAR{t}.DEF".format(n = calc, t = trace))
+    
     def ask_spot_data(self):
         self.write(":SENS1:SWE:POIN 1")
         self.write(":DISP:WIND1:TRAC1:Y:AUTO")

@@ -506,7 +506,7 @@ class test111(test11):
         self.TestLoop_Start(testdb)
         
         ### -- Testing-specific settings -- ###
-        sij = self.para['value'][0]
+        sij = self.para['value'][0].split()
         pin = self.eqplist['vna']['_PWR'][0]
         ifb = self.eqplist['vna']['_IFB']
         

@@ -6,8 +6,8 @@ import EqpLibrary
 MeaList=[   
 
 
-(   '1.  Response Sweep',                (('11.  Frequency Spot_Sweep',    ('111.  S-para Spot_Sweep',     '112.  Spectrum Spot_Sweep'                             )),
-                                          ('12.  Frequency Range_Sweep',   ('121.  S-para Range_Sweep',    '122.  Spectrum Range_Sweep'                             )))),  
+(   '1.  Response Sweep',                (('11.  S-para Sweep',  ('111.  S-para Frequency Trace', '112.  S-para Range Sweep'                            )),
+                                          ('12.  Spectrum Sweep',   ('121.  Spectrum Frequency Trace',    '122.  Spectrum Range Sweep'                             )))),  
 
  
 (   '2.  Antenna Pattern Measurement',   (('21.  Single Polarization',    ('211.  EIRP Measurement',       '212.  Single 2D Cut',    '213.  Full 3D Pattern'     )),

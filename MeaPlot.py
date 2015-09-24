@@ -3,13 +3,14 @@ from admin import *
 import matplotlib
 import matplotlib.figure
 import matplotlib.backends.backend_wxagg
+from matplotlib.lines import Line2D
 Canvas = matplotlib.backends.backend_wxagg.FigureCanvasWxAgg 
 
 
 
         
 class Figure2D(wx.Panel):
-    def __init__(self,parent):
+    def __init__(self,parent, notraces = 1):
         wx.Panel.__init__(self,parent,-1,style=wx.SUNKEN_BORDER)
 
         self.figure=matplotlib.figure.Figure(facecolor='white' )
@@ -24,9 +25,27 @@ class Figure2D(wx.Panel):
 
         self.xdata=[]
         self.ydata=[]
-        self.trace,=self.axes.plot([],[])        
+        self.traces = []
+
+        self.notraces = notraces
+        self.reset_notraces(notraces)
+
         self.canvas.draw()
 
+        
+
+    def reset_notraces(self, notraces):
+        self.traces = []
+        for each in range(notraces):
+            added_line = Line2D([],[])
+            self.traces.append(added_line)
+            self.axes.add_line(added_line)
+        self.canvas.draw()
+
+
+    def set_notraces(self, notraces):
+        self.notraces = notraces
+        
     def drawlabels(self,label_x,label_y):
         self.axes.set_xlabel(label_x,labelpad=30)
         self.axes.set_ylabel(label_y,labelpad=30)        
@@ -54,20 +73,28 @@ class Figure2D(wx.Panel):
             maximum = maximum*0.9
         return minimum, maximum
     
-    def drawgraph(self, xdata, ydata):
+    def drawgraph(self, xdata, *ydata):
         x_min = mininlist(xdata)
         x_max = maxinlist(xdata)
 
         if x_min == x_max:
             x_min, x_max = self._set_min_max(xdata)
-            
-        y_min, y_max = self._set_min_max(ydata)        
+
+        all_ydata = []
+        for k, each in enumerate(ydata):
+            all_ydata += each
+
+        y_min, y_max = self._set_min_max(all_ydata)        
 
         self.axes.set_xlim(x_min, x_max)
         self.axes.set_ylim(y_min, y_max)
-        self.trace.set_xdata(xdata)
-        self.trace.set_ydata(ydata)
+
+        for k, each in enumerate(self.traces):
+            each.set_xdata(xdata)
+            each.set_ydata(ydata[k])
+
         self.canvas.draw()
+
         
     def _OnIdle(self,event):
         try:
@@ -82,8 +109,17 @@ class Figure2D(wx.Panel):
 
     def _SetSize(self):
         pixels = tuple (self.GetClientSize())
-##        self.SetSize(pixels)
         self.canvas.SetSize(pixels)
         self.figure.set_size_inches(float( pixels[0] )/self.figure.get_dpi(),
                                      float( pixels[1] )/self.figure.get_dpi() )
         
+if __name__ == '__main__':
+    app = wx.App()
+    frame = wx.Frame(None, -1, 'Plot')
+
+    plotter = Figure2D(frame, notraces = 1)
+    plotter.reset_notraces(2)
+    plotter.drawgraph(range(10), [9,8,7,6,5,4,3,2,1,0], range(10))
+    frame.Show()
+    app.MainLoop()
+    
