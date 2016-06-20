@@ -16,13 +16,13 @@ I will make demanded requests a high priority.
 
 1. Project management - tests can be managed as a project. All the tests related to the specific system or component can be managed in one project.  
 
-2. Batch tests - tests can be added in one batch.  'Green Light' feature can be enabled to allow continual repeated tests without prompt interface interruption.  Suitable for repeatibility and reliability tests.
+2. Batch tests - tests can be added in one batch.  'Green Light' feature can be enabled to allow continual repeated tests without prompt interface interruption.  Suitable for repeatability and reliability tests.
 
 3. Easy measurement interface - the design concept of ART is to provide simple interface to start a test.  ART will remember the major measurement and equipment settings.
 
 4. Future - add graph GUI to render the output graphs.
 
-5. Future - add tools to analize data, such as standard deviations of big quantity of batch tests.
+5. Future - add tools to analyze data, such as standard deviations of big quantity of batch tests.
 
 6. Future - add GUI to display test system diagrams.
 
